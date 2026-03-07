@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CodeVault</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #7c6dfa;
+      --accent2: #f97dab;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #facc15;
+      --text: #e2e2f0;
+      --muted: #6b6b8a;
+      --card: #13131f;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 400px;
+      min-height: 500px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 18px 20px 14px;
+      background: linear-gradient(135deg, #0d0d1a 0%, #111128 100%);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 20px; right: 20px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.4;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+
+    .settings-btn {
+      width: 30px; height: 30px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      transition: all 0.2s;
+      color: var(--muted);
+    }
+    .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* VIEWS */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* SETUP VIEW */
+    .setup-container {
+      padding: 24px 20px;
+    }
+    .setup-title {
+      font-size: 22px; font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .setup-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 24px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+    }
+    .field input::placeholder { color: var(--muted); }
+
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent), #9d8fff);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .save-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .save-btn:active { transform: translateY(0); }
+
+    /* MAIN VIEW */
+    .main-container { padding: 16px 20px 20px; }
+
+    /* GitHub Status Bar */
+    .gh-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    .gh-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      flex-shrink: 0;
+    }
+    .gh-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    .gh-info { flex: 1; }
+    .gh-user { font-size: 13px; font-weight: 700; }
+    .gh-repo { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .gh-edit {
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .gh-edit:hover { border-color: var(--accent); }
+
+    /* Platform Accordions */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .platform-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .platform-card:hover { border-color: #2a2a3e; }
+
+    .platform-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .platform-emoji { font-size: 18px; }
+    .platform-name { font-size: 14px; font-weight: 700; flex: 1; }
+    .platform-count {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .platform-arrow {
+      font-size: 11px;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+    .platform-card.open .platform-arrow { transform: rotate(90deg); }
+
+    .platform-body {
+      display: none;
+      padding: 0 14px 12px;
+    }
+    .platform-card.open .platform-body { display: block; }
+
+    .submission-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+    .submission-item:hover { background: var(--surface); }
+    .submission-item.selected { background: rgba(124, 109, 250, 0.12); }
+
+    .sub-checkbox {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .submission-item.selected .sub-checkbox {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .sub-check-icon { color: white; font-size: 10px; display: none; }
+    .submission-item.selected .sub-check-icon { display: block; }
+
+    .sub-info { flex: 1; min-width: 0; }
+    .sub-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sub-meta {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+    }
+
+    .sub-lang {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .lang-python { background: rgba(253, 186, 116, 0.15); color: #fdba74; }
+    .lang-cpp { background: rgba(129, 140, 248, 0.15); color: #818cf8; }
+    .lang-java { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+    .lang-js { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+    .lang-go { background: rgba(34, 211, 238, 0.15); color: #22d3ee; }
+    .lang-rust { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+
+    .sub-delete {
+      width: 26px; height: 26px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      opacity: 0;
+    }
+    .submission-item:hover .sub-delete { opacity: 1; }
+    .sub-delete:hover { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 16px 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Action Bar */
+    .action-bar {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+    }
+    .push-btn {
+      flex: 1;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--accent) 0%, #9d8fff 100%);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px;
+    }
+    .push-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(124,109,250,0.3); }
+    .push-btn:active { transform: translateY(0); }
+    .push-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .delete-sel-btn {
+      padding: 13px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--red);
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .delete-sel-btn:hover { background: rgba(248,113,113,0.1); border-color: var(--red); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 16px; left: 20px; right: 20px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 999;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74,222,128,0.3); color: var(--green); }
+    .toast.error { background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+    .toast.info { background: rgba(124, 109, 250, 0.15); border: 1px solid rgba(124,109,250,0.3); color: var(--accent); }
+
+    /* Complexity modal */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: 340px;
+      margin: 16px;
+    }
+    .modal-title {
+      font-size: 17px; font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .modal-sub {
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .modal-actions {
+      display: flex; gap: 10px; margin-top: 20px;
+    }
+    .modal-confirm {
+      flex: 1;
+      padding: 11px;
+      background: linear-gradient(135deg, var(--accent), #9d8fff);
+      border: none; border-radius: 10px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+    }
+    .modal-cancel {
+      padding: 11px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Loading spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">Code<span>Vault</span></div>
+  </div>
+  <button class="settings-btn" id="settingsBtn" title="Settings">⚙</button>
+</div>
+
+<!-- SETUP VIEW -->
+<div class="view" id="setupView">
+  <div class="setup-container">
+    <div class="setup-title">Connect GitHub</div>
+    <div class="setup-sub">// one-time setup · takes 30 seconds</div>
+
+    <div class="field">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+    </div>
+    <div class="field">
+      <label>GitHub Username</label>
+      <input type="text" id="ghUsername" placeholder="your-username" />
+    </div>
+    <div class="field">
+      <label>Target Repository</label>
+      <input type="text" id="ghRepo" placeholder="leetcode-solutions" />
+    </div>
+    <div class="field">
+      <label>Default Branch</label>
+      <input type="text" id="ghBranch" placeholder="main" value="main" />
+    </div>
+
+    <button class="save-btn" id="saveSettingsBtn">Save & Connect →</button>
+  </div>
+</div>
+
+<!-- MAIN VIEW -->
+<div class="view" id="mainView">
+  <div class="main-container">
+
+    <!-- GitHub Status -->
+    <div class="gh-status">
+      <div class="gh-dot" id="ghDot"></div>
+      <div class="gh-info">
+        <div class="gh-user" id="ghUserDisplay">—</div>
+        <div class="gh-repo" id="ghRepoDisplay">—</div>
+      </div>
+      <span class="gh-edit" id="editGhBtn">Edit</span>
+    </div>
+
+    <!-- Platform List -->
+    <div class="section-label">Recent Submissions</div>
+    <div id="platformList"></div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="delete-sel-btn" id="deleteSelBtn" title="Delete selected">🗑</button>
+      <button class="push-btn" id="pushBtn" disabled>
+        <span id="pushBtnText">Push to GitHub</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- COMPLEXITY MODAL -->
+<div class="modal-overlay" id="complexityModal">
+  <div class="modal">
+    <div class="modal-title">Complexity Info</div>
+    <div class="modal-sub">// will appear in commit message</div>
+    <div class="field">
+      <label>Time Complexity</label>
+      <input type="text" id="timeComp" placeholder="e.g. O(n log n)" />
+    </div>
+    <div class="field">
+      <label>Space Complexity</label>
+      <input type="text" id="spaceComp" placeholder="e.g. O(n)" />
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <input type="text" id="commitNote" placeholder="e.g. DP + memoization" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modalCancel">Cancel</button>
+      <button class="modal-confirm" id="modalConfirm">Push Now ⚡</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastMsg">Done!</span>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
