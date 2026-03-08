@@ -1,0 +1,1 @@
+Added multiple image sizes to ensure better resolution and responsiveness across different screen sizes.
