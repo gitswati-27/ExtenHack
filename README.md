@@ -74,32 +74,32 @@ This helps you maintain a version-controlled archive of your coding journey.
 ### 1️⃣ Connect GitHub
 Connect your GitHub account so the extension can push your solved problems automatically.
 
-![Connect GitHub](screenshots/connect-github.png)
+![Connect GitHub](Screenshots/connect-github.png)
 
 ### 2️⃣ Extension Interface
 Open the extension popup to access the main interface.
 
-![Extension Interface](screenshots/interface.png)
+![Extension Interface](Screenshots/interface.png)
 
 ### 3️⃣ Select the Problems You Want to Add
 Choose the coding problems you want to store in your GitHub repository.
 
-![Select Problems](screenshots/select-problems.png)
+![Select Problems](Screenshots/select-problems.png)
 
 ### 4️⃣ Mention Complexity and Notes
 Add time complexity, space complexity, and personal notes.
 
-![Complexity](screenshots/complexity-notes.png)
+![Complexity](Screenshots/complexity-notes.png)
 
 ### 5️⃣ Click Push to GitHub (Success Message Appears)
 Click Push to GitHub and a confirmation message appears.
 
-![Push Success](screenshots/push-success.png)
+![Push Success](Screenshots/push-success.png)
 
 ### 6️⃣ Repository Where It Got Added
 View the uploaded solution in your GitHub repository.
 
-![GitHub Repo](screenshots/github-repo.png)
+![GitHub Repo](Screenshots/github-repo.png)
 ---
 
 ## 📂 Example Repository Structure
