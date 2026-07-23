@@ -32,21 +32,16 @@
       "matches": ["https://leetcode.com/*"],
       "js": ["content-scripts/leetcode.js"],
       "run_at": "document_idle"
-    },
+    }
+  ],
+  "web_accessible_resources": [
     {
-      "matches": ["https://codeforces.com/*"],
-      "js": ["content-scripts/codeforces.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://www.hackerrank.com/*"],
-      "js": ["content-scripts/hackerrank.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://atcoder.jp/*"],
-      "js": ["content-scripts/atcoder.js"],
-      "run_at": "document_idle"
+      "resources": [
+        "content-scripts/inject.js"
+      ],
+      "matches": [
+        "https://leetcode.com/*"
+      ]
     }
   ]
 }

@@ -217,13 +217,21 @@ function bindEvents() {
   });
 
   // Modal confirm → push
-  document.getElementById('modalConfirm').addEventListener('click', async () => {
+document.getElementById('modalConfirm').addEventListener('click', async () => {
+    console.log("Modal confirm clicked");
+
     document.getElementById('complexityModal').classList.remove('show');
+
     const timeComp = document.getElementById('timeComp').value.trim() || 'O(??)';
     const spaceComp = document.getElementById('spaceComp').value.trim() || 'O(??)';
     const note = document.getElementById('commitNote').value.trim();
+
+    console.log(timeComp, spaceComp, note);
+
     await pushSelected(timeComp, spaceComp, note);
-  });
+
+    console.log("pushSelected finished");
+});
 
   // Delete selected
   document.getElementById('deleteSelBtn').addEventListener('click', async () => {
@@ -235,7 +243,9 @@ function bindEvents() {
 // Delete 
 async function deleteSingleSubmission(platform, id) {
   if (!submissions[platform]) return;
-  submissions[platform] = submissions[platform].filter(s => s.id !== id);
+  submissions[platform] = submissions[platform].filter(
+  s => String(s.id) !== String(id)
+);
   selected.delete(`${platform}::${id}`);
   await saveSubmissions(submissions);
   renderPlatforms();
@@ -246,7 +256,9 @@ async function deleteSelected() {
   for (const key of selected) {
     const [platform, id] = key.split('::');
     if (submissions[platform]) {
-      submissions[platform] = submissions[platform].filter(s => s.id !== id);
+      submissions[platform] = submissions[platform].filter(
+  s => String(s.id) !== String(id)
+);
     }
   }
   const count = selected.size;
@@ -262,15 +274,17 @@ async function pushSelected(timeComp, spaceComp, note) {
   const pushText = document.getElementById('pushBtnText');
   pushBtn.disabled = true;
   pushBtn.innerHTML = `<div class="spinner"></div> Pushing...`;
-
+ 
   let pushed = 0;
   let failed = 0;
 
   for (const key of selected) {
     const [platform, id] = key.split('::');
-    const sub = (submissions[platform] || []).find(s => s.id === id);
+    const sub = (submissions[platform] || []).find(
+    s => String(s.id) === String(id)
+);
     if (!sub) continue;
-
+console.log("Pushing submission:", sub);
     const ext = langToExt(sub.lang);
     const fileName = sanitizeFilename(sub.title);
     const filePath = `${platform}/${fileName}.${ext}`;
@@ -287,6 +301,7 @@ async function pushSelected(timeComp, spaceComp, note) {
   }
 
   pushBtn.innerHTML = `<span id="pushBtnText">Push to GitHub</span>`;
+  pushBtn.disabled = false;
 
   if (pushed > 0) {
     showToast(`✓ Pushed ${pushed} file${pushed > 1 ? 's' : ''} to GitHub!`, 'success');
@@ -336,7 +351,9 @@ async function pushFileToGitHub(path, content, message) {
   });
 
   if (!res.ok) {
-    const err = await res.json();
+    const text = await res.text();
+console.log(text);
+throw new Error(text);
     throw new Error(err.message || 'GitHub API error');
   }
   return res.json();

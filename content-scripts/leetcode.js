@@ -1,132 +1,92 @@
+(() => {
 
+console.log("✅ Content Script Loaded");
+const processedSubmissionIds = new Set();
+const script = document.createElement("script");
 
-(function () {
-  'use strict';
+script.src = chrome.runtime.getURL(
+    "content-scripts/inject.js"
+);
 
-  const PLATFORM = 'leetcode';
+(document.head || document.documentElement).appendChild(script);
 
-  interceptFetch();
-  interceptXHR();
+script.onload = () => script.remove();
 
-  function interceptFetch() {
-    const origFetch = window.fetch;
-    window.fetch = async function (...args) {
-      const response = await origFetch.apply(this, args);
-      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+window.addEventListener("message", event => {
 
-      if (url.includes('/submissions/detail/') || url.includes('submitSolution') || url.includes('interpret_solution')) {
-        try {
-          const clone = response.clone();
-          const json = await clone.json();
-          handleSubmissionResult(json, url);
-        } catch (_) {}
-      }
-      return response;
-    };
-  }
+    if (event.source !== window)
+        return;
 
-  function interceptXHR() {
-    const origOpen = XMLHttpRequest.prototype.open;
-    const origSend = XMLHttpRequest.prototype.send;
+    if (event.data.source !== "CodeVault")
+        return;
 
-    XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-      this._cvUrl = url;
-      return origOpen.apply(this, [method, url, ...rest]);
-    };
+    if (event.data.type !== "submissionDetails")
+        return;
 
-    XMLHttpRequest.prototype.send = function (...args) {
-      this.addEventListener('load', function () {
-        if (this._cvUrl && (this._cvUrl.includes('/check/') || this._cvUrl.includes('submission'))) {
-          try {
-            const json = JSON.parse(this.responseText);
-            handleSubmissionResult(json, this._cvUrl);
-          } catch (_) {}
-        }
-      });
-      return origSend.apply(this, args);
-    };
-  }
+    const body = event.data.request;
+    const json = event.data.response;
 
-  function handleSubmissionResult(data, url) {
-    if (data.status_msg === 'Accepted' || data.run_success === true && data.status_code === 10) {
-      extractAndSave(data);
-    }
-  }
+    const details = json?.data?.submissionDetails;
 
-  function extractAndSave(data) {
-    const titleEl = document.querySelector('[data-cy="question-title"]')
-      || document.querySelector('.mr-2.text-lg.font-medium')
-      || document.querySelector('div[class*="title"]');
-    const title = titleEl?.textContent?.trim() || document.title.replace(' - LeetCode', '').trim();
+    if (!details)
+        return;
 
-    const code = extractCode();
-    const lang = detectLanguage(data);
+    const accepted =
+        details.statusCode === 10 ||
+        details.statusCode === 16;
 
-    const submission = {
-      id: String(data.submission_id || data.id || Date.now()),
-      title: title || 'Untitled',
-      lang: lang,
-      code: code,
-      date: Date.now(),
-      url: window.location.href,
-      status: data.status_msg || 'Accepted',
-    };
+    if (!accepted)
+        return;
 
-    chrome.runtime.sendMessage({ type: 'SAVE_SUBMISSION', platform: PLATFORM, submission });
-  }
+   const problemSlug = details.question.titleSlug;
 
-  function extractCode() {
-    try {
-      const monacoEditor = window.monaco?.editor?.getEditors?.()[0];
-      if (monacoEditor) return monacoEditor.getValue();
-    } catch (_) {}
+const submission = {
 
-    const cm = document.querySelector('.CodeMirror');
-    if (cm?.CodeMirror) return cm.CodeMirror.getValue();
+    id: body.variables.submissionId,
 
-    const ta = document.querySelector('textarea.inputarea') || document.querySelector('[class*="editor"] textarea');
-    if (ta) return ta.value;
+    // Popup uses this
+    title: details.question.title || problemSlug,
 
-    const lines = document.querySelectorAll('.view-line');
-    if (lines.length > 0) {
-      return Array.from(lines).map(l => l.textContent).join('\n');
-    }
+    // Internal
+    problem: problemSlug,
 
-    return '// CodeVault: could not extract code automatically.\n// Please paste your solution here.';
-  }
+    // Popup uses this
+    lang: details.lang.verboseName,
 
-  function detectLanguage(data) {
-    if (data.lang) return data.lang;
+    // Keep for compatibility
+    language: details.lang.verboseName,
 
-    const langSelect = document.querySelector('[id*="lang"] select, [class*="lang"] select, button[id*="lang"]');
-    if (langSelect) return langSelect.value || langSelect.textContent?.trim();
+    runtime: details.runtimeDisplay,
 
-    return 'unknown';
-  }
+    memory: details.memoryDisplay,
 
-  const origFetch2 = window.fetch;
-  window.fetch = async function (...args) {
-    const req = args[0];
-    const options = args[1];
-    const url = typeof req === 'string' ? req : req?.url || '';
+    // Popup uses this
+    date: details.timestamp * 1000,
 
-    if (url.includes('graphql') && options?.body) {
-      try {
-        const body = JSON.parse(options.body);
-        if (body.operationName === 'submitSolution' || body.operationName === 'Submit') {
-          const response = await origFetch2.apply(this, args);
-          const clone = response.clone();
-          setTimeout(async () => {
-            try {
-              const json = await clone.json();
-              handleSubmissionResult(json?.data?.submitSolution || json, url);
-            } catch (_) {}
-          }, 3000); 
-          return response;
-        }
-      } catch (_) {}
-    }
+    // Keep original
+    timestamp: details.timestamp,
 
-    return origFetch2.apply(this, args);
-  };
+    // Popup uses this
+    url: `https://leetcode.com/problems/${problemSlug}/`,
+
+    code: details.code,
+
+    status: "Accepted"
+};
+    if (processedSubmissionIds.has(String(submission.id))) {
+    console.log("Duplicate submission ignored:", submission.id);
+    return;
+}
+
+processedSubmissionIds.add(String(submission.id));
+
+console.log("Saving ID:", submission.id, submission);
+
+chrome.runtime.sendMessage({
+    type: "SAVE_SUBMISSION",
+    platform: "leetcode",
+    submission
+});
+});
+
 })();

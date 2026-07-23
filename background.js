@@ -14,7 +14,9 @@ async function saveSubmission(platform, submission) {
       if (!submissions[platform]) submissions[platform] = [];
 
       // Deduplicate by id
-      const exists = submissions[platform].findIndex(s => s.id === submission.id);
+      const exists = submissions[platform].findIndex(
+    s => String(s.id) === String(submission.id)
+);
       if (exists !== -1) {
         // Update existing
         submissions[platform][exists] = submission;
